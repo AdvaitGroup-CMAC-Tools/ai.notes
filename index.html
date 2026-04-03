@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Meeting Notes — Advait Group</title>
+<script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#1A4084;--blue2:#3A66AA;--blue3:#83B1DC;--blue4:#EBF2FF;
+  --red:#b52a1c;--red2:#FDECEA;
+  --green:#1a7a3a;--green2:#EAF6EE;
+  --bg:#f4f6fb;--card:#fff;--border:#dde4f0;
+  --text:#1C1C1C;--text2:#5a6474;--text3:#8a96a8;
+  --radius:10px;--radius2:6px;
+}
+body{font-family:'Inter',Calibri,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.app{max-width:700px;margin:0 auto;padding:24px 16px 48px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:#1A4084;color:#fff;padding:12px 24px;border-radius:30px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.18);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);z-index:9999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.green{background:#1a7a3a;}
+.toast.red{background:#b52a1c;}
+
+/* TICKER */
+.ticker-wrap{background:var(--blue);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;height:36px;display:flex;align-items:center;transition:background .4s;}
+.ticker-wrap.occupied{background:var(--red);}
+.ticker-inner{overflow:hidden;flex:1;height:100%;}
+.ticker-text{display:inline-block;white-space:nowrap;font-size:12px;font-weight:500;color:#fff;line-height:36px;padding-right:80px;animation:tick 22s linear infinite;}
+.ticker-text.fast{animation-duration:13s;}
+@keyframes tick{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
+.tdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:8px;vertical-align:middle;}
+.tdot-free{background:#5be38a;}
+.tdot-busy{background:#ffccc9;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.hdr-title{font-size:20px;font-weight:600;color:var(--text);}
+.about-btn{font-size:12px;color:var(--blue);background:var(--blue4);border:none;border-radius:20px;padding:5px 14px;cursor:pointer;font-weight:500;}
+.page-sub{font-size:12px;color:var(--text2);margin-bottom:20px;}
+
+/* ABOUT PANEL */
+.about-panel{display:none;background:var(--card);border:1px solid var(--blue3);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;}
+.about-panel.show{display:block;}
+.about-top{font-size:13px;font-weight:600;color:var(--blue);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #d0e4f5;display:flex;justify-content:space-between;}
+.close-btn{font-size:11px;color:var(--text3);cursor:pointer;font-weight:400;}
+.about-body{font-size:13px;color:var(--text);line-height:1.75;}
+.about-body p{margin-bottom:8px;}
+.about-body ul{padding-left:18px;margin-bottom:8px;}
+.about-body li{margin-bottom:3px;color:var(--text2);}
+.contact-card{display:flex;align-items:center;gap:12px;margin-top:12px;padding:10px 14px;background:var(--blue4);border-radius:var(--radius2);border:1px solid var(--blue3);}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.cname{font-size:13px;font-weight:500;color:var(--blue);}
+.cdept{font-size:11px;color:var(--blue2);margin-top:1px;}
+.sop-row{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 14px;background:var(--blue4);border-radius:var(--radius2);font-size:12px;font-weight:500;color:var(--blue);border:1px solid var(--blue3);}
+
+/* TABS */
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;}
+.tab{padding:9px 20px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+
+/* BOARD */
+.card-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.card-icon{width:42px;height:42px;border-radius:var(--radius2);background:var(--blue4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.card-name{font-size:14px;font-weight:600;color:var(--text);}
+.card-id{font-size:12px;color:var(--blue);margin-top:2px;}
+.sbadge{margin-left:auto;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;transition:all .3s;}
+.badge-free{background:var(--green2);color:var(--green);}
+.badge-busy{background:var(--red2);color:var(--red);}
+.info-row{font-size:13px;color:var(--text2);background:var(--bg);border-radius:var(--radius2);padding:10px 14px;min-height:38px;display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.idot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-free{background:#27ae60;}
+.dot-busy{background:#e74c3c;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.field-row{display:flex;gap:10px;margin-bottom:14px;}
+select,input[type=text]{height:38px;font-size:13px;padding:0 12px;border-radius:var(--radius2);border:1px solid var(--border);background:#fff;color:var(--text);font-family:inherit;outline:none;}
+select:focus,input:focus{border-color:var(--blue2);}
+.field-row select{flex:1.2;}
+.field-row input{flex:1.5;min-width:0;}
+::placeholder{color:var(--text3);}
+.btn{height:38px;padding:0 20px;border-radius:var(--radius2);font-size:13px;font-weight:500;cursor:pointer;border:none;white-space:nowrap;font-family:inherit;transition:opacity .15s;}
+.btn:active{opacity:.85;}
+.btn-claim{background:var(--blue);color:#fff;}
+.btn-release{background:var(--red);color:#fff;}
+.btn-disabled{background:#eef1f7;color:var(--text3);cursor:not-allowed;}
+.iconfirm{margin-top:14px;padding:14px 16px;background:var(--blue4);border-radius:var(--radius2);border:1px solid var(--blue3);display:none;}
+.iconfirm.show{display:block;}
+.iconfirm-label{font-size:12px;color:var(--blue);font-weight:500;margin-bottom:10px;}
+.dur-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.dur-row select{flex:1;min-width:140px;}
+.dur-divider{font-size:11px;color:var(--text3);white-space:nowrap;}
+.custom-dur-wrap{display:flex;align-items:center;gap:6px;flex:1;min-width:120px;}
+.custom-dur-wrap input{flex:1;min-width:0;}
+.custom-dur-wrap span{font-size:12px;color:var(--text2);white-space:nowrap;}
+.iconfirm-btns{display:flex;gap:10px;}
+.btn-ok{height:38px;padding:0 16px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius2);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;}
+.btn-cx{height:38px;padding:0 14px;background:transparent;color:var(--blue);border:1px solid var(--blue3);border-radius:var(--radius2);font-size:13px;cursor:pointer;font-family:inherit;}
+.log-hdr{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.log-list{display:flex;flex-direction:column;gap:4px;max-height:130px;overflow-y:auto;}
+.log-item{font-size:12px;padding:6px 10px;border-radius:var(--radius2);background:var(--bg);display:flex;justify-content:space-between;gap:8px;align-items:center;}
+.ld{color:var(--text);font-weight:500;flex-shrink:0;}
+.lm{color:var(--text2);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lt{color:var(--text3);font-size:11px;flex-shrink:0;}
+.lc{color:var(--green);font-size:11px;}
+.lr{color:var(--red);font-size:11px;}
+.no-log{font-size:12px;color:var(--text3);font-style:italic;}
+.rfhint{font-size:11px;color:var(--text3);text-align:right;margin-top:6px;display:flex;align-items:center;justify-content:flex-end;gap:5px;}
+.pring{width:7px;height:7px;border-radius:50%;background:#27ae60;animation:pr 2s ease-out infinite;}
+@keyframes pr{0%{opacity:1;transform:scale(1)}70%{opacity:0;transform:scale(2.2)}100%{opacity:0}}
+
+/* MOM TAB */
+.mlabel{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;margin-top:12px;}
+.mlabel:first-child{margin-top:0;}
+.mmeta{display:flex;gap:10px;margin:6px 0 0;}
+.mmeta input{flex:1;}
+textarea{width:100%;font-size:13px;padding:10px 12px;border-radius:var(--radius2);border:1px solid var(--border);background:#fff;color:var(--text);resize:vertical;line-height:1.6;font-family:inherit;outline:none;}
+textarea:focus{border-color:var(--blue2);}
+.btn-gen{height:42px;width:100%;background:var(--blue);color:#fff;border:none;border-radius:var(--radius2);font-size:14px;font-weight:600;cursor:pointer;margin-top:14px;font-family:inherit;transition:background .2s;}
+.btn-gen:hover{background:var(--blue2);}
+.btn-gen:disabled{background:#c5cdd9;cursor:not-allowed;}
+.status-bar{margin-top:12px;min-height:20px;font-size:13px;}
+.sbar-loading{display:flex;align-items:center;gap:8px;color:var(--blue);}
+.spinner{width:16px;height:16px;border:2px solid #d0e4f5;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sbar-ok{color:var(--green);}
+.err-box{padding:10px 14px;background:#fff3f3;border:1px solid #f5bcbc;border-radius:var(--radius2);color:#a02020;font-size:12px;line-height:1.6;}
+.err-box strong{display:block;margin-bottom:3px;color:#7a1010;}
+
+/* MOM OUTPUT */
+.mom-out{display:none;margin-top:16px;}
+.mom-out.show{display:block;}
+.mom-out-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.mhdr-tbl{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13px;}
+.mhdr-tbl td{padding:7px 12px;border:1px solid #d0e4f5;}
+.mhdr-tbl td:first-child{font-weight:600;background:var(--blue4);color:var(--blue);width:38%;}
+.msect{font-size:13px;font-weight:600;color:var(--blue);text-decoration:underline;margin:14px 0 8px;}
+.mtbl{width:100%;border-collapse:collapse;font-size:12px;}
+.mtbl th{background:var(--blue);color:#fff;padding:8px 10px;text-align:left;font-weight:500;}
+.mtbl td{padding:8px 10px;border:1px solid #d0e4f5;vertical-align:top;}
+.mtbl tr:nth-child(even) td{background:#f5f9ff;}
+.mnext{font-size:13px;color:var(--text);margin-top:14px;padding:10px 14px;background:var(--blue4);border-radius:var(--radius2);}
+.btn-row{display:flex;gap:10px;margin-top:14px;}
+.btn-dl{flex:1;height:40px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius2);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;}
+.btn-dl:disabled{background:#c5cdd9;cursor:not-allowed;}
+.btn-cp{flex:1;height:40px;background:transparent;color:var(--blue);border:1px solid var(--blue3);border-radius:var(--radius2);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;}
+.priv{font-size:11px;color:var(--text3);margin-top:10px;padding:7px 12px;background:var(--bg);border-radius:var(--radius2);}
+/* MODE TOGGLE */
+.mode-toggle{display:flex;gap:0;margin:0 0 14px;border:1.5px solid var(--blue3);border-radius:var(--radius2);overflow:hidden;}
+.mode-btn{flex:1;height:38px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .2s;position:relative;}
+.mode-btn.active{background:var(--blue);color:#fff;}
+.mode-btn:not(.active):hover{background:var(--blue4);}
+.mode-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.badge-fast{background:#d4f5e2;color:#1a7a3a;}
+.badge-slow{background:#FFF0EE;color:#b52a1c;}
+.mode-hint{font-size:12px;color:var(--text2);padding:10px 14px;border-radius:var(--radius2);margin-bottom:12px;line-height:1.6;}
+.mode-hint.fast-hint{background:#EAF6EE;border:1px solid #b8e8cb;}
+.mode-hint.slow-hint{background:#FFF0EE;border:1px solid #f5bcbc;}
+.timer-bar{height:4px;background:#eee;border-radius:2px;margin-top:8px;overflow:hidden;display:none;}
+.timer-bar.show{display:block;}
+.timer-fill{height:100%;background:var(--blue);border-radius:2px;width:0;transition:width .5s linear;}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="toast" id="toast"></div>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap" id="ticker-bar">
+    <div class="ticker-inner">
+      <div class="ticker-text" id="ticker-text">
+        <span class="tdot tdot-free"></span>AI Meeting Notes account is currently free — available for use &nbsp;·&nbsp; Select your department and claim it when your meeting starts
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-title">AI Meeting Notes</div>
+    <button class="about-btn" onclick="toggleAbout()">ⓘ About this tool</button>
+  </div>
+  <div class="page-sub">Shared account access board · Advait Group (AETL &amp; AGPL)</div>
+
+  <!-- ABOUT -->
+  <div class="about-panel" id="about-panel">
+    <div class="about-top">About AI Meeting Notes (Teams Maestro) <span class="close-btn" onclick="toggleAbout()">✕ Close</span></div>
+    <div class="about-body">
+      <p>Dear All,</p>
+      <p>As per the requirement for AI-based meeting documentation, we have incorporated a new <strong>AI Meeting Notes tool (Teams Maestro)</strong> that can be used during meetings, especially for external meetings.</p>
+      <p>This tool will automatically join the meeting and generate:</p>
+      <ul><li>AI-based meeting transcripts</li><li>Short summary of discussions</li><li>Detailed transcript of the entire meeting</li></ul>
+      <p>Please go through the attached SOP which includes steps to login, instructions on how to use the tool, and guidelines on how to add it to meetings. Works with <strong>Microsoft Teams, Zoom</strong> and <strong>Google Meet</strong>.</p>
+      <p>For any issues, connect with:</p>
+      <div class="contact-card">
+        <div class="avatar">SD</div>
+        <div><div class="cname">Sparsh Desai</div><div class="cdept">Corporate — CMAC</div></div>
+      </div>
+      <div class="sop-row">📄&nbsp; AI Meeting Notes (Teams Maestro) — SOP.pdf</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('board')">📋 Account Board</div>
+    <div class="tab" onclick="switchTab('mom')">📝 Generate MOM</div>
+  </div>
+
+  <!-- BOARD TAB -->
+  <div class="tab-panel active" id="tab-board">
+    <div class="card">
+      <div class="card-top">
+        <div class="card-icon">📝</div>
+        <div><div class="card-name">AI Notes — Account 1</div><div class="card-id"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="55343c7b3b3a21302615343123343c2132273a20257b363a7b3c3b">[email&#160;protected]</a></div></div>
+        <div class="sbadge badge-free" id="badge">Checking…</div>
+      </div>
+      <div class="info-row"><div class="idot dot-free" id="dot"></div><span id="info-text">Loading…</span></div>
+      <div class="field-row">
+        <select id="dept" onchange="onDeptChange()">
+          <option value="">Select department</option>
+          <option>AGPL-GH2-EPC</option><option>AGPL-Solar-EPC</option><option>AGPL-Electrolizer-MFG</option><option>AGPL-NRE-BESS-EPC</option>
+          <option>Corporate - F&amp;A</option><option>Corporate - CP&amp;P</option><option>Corporate - CMAC</option><option>Corporate - CS</option>
+          <option>Corporate - HR</option><option>Corporate - GM-1</option><option>Corporate - GM-2</option><option>Corporate - Support Staff</option>
+          <option>PTS-Liveline-EPC</option><option>PTS-ACS-OPGW-MFG</option><option>PTS-DISCOM-EPC</option><option>PTS-Tools-MFG</option>
+          <option>PTS-BD</option><option>PTS-ERS-MFG</option><option>PTS-HTLS-EPC</option><option>NRE-Sustainability Consultancy</option>
+          <option>Other</option>
+        </select>
+        <input type="text" id="meeting-name" placeholder="Meeting name / subject" maxlength="60" oninput="onDeptChange()"/>
+      </div>
+      <button class="btn btn-disabled" id="action-btn" onclick="handleAction()">—</button>
+      <div class="iconfirm" id="iconfirm">
+        <div class="iconfirm-label">How long do you need it?</div>
+        <div class="dur-row">
+          <select id="duration" onchange="onDurSelect()">
+            <option value="10 min">10 minutes</option>
+            <option value="15 min">15 minutes</option>
+            <option value="30 min" selected>30 minutes</option>
+            <option value="45 min">45 minutes</option>
+            <option value="1 hr">1 hour</option>
+            <option value="1.5 hrs">1.5 hours</option>
+            <option value="2 hrs">2 hours</option>
+            <option value="3 hrs">3 hours</option>
+            <option value="Until released">Until I release it</option>
+            <option value="custom">Custom…</option>
+          </select>
+          <span class="dur-divider">or type your own</span>
+          <div class="custom-dur-wrap">
+            <input type="text" id="custom-duration" placeholder="e.g. 20 min, 4 hrs" maxlength="20" oninput="onCustomDur()"/>
+          </div>
+        </div>
+        <div class="iconfirm-btns">
+          <button class="btn-ok" onclick="confirmClaim()">Confirm</button>
+          <button class="btn-cx" onclick="cancelClaim()">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="log-hdr">Activity Log</div>
+      <div class="log-list" id="log-list"><div class="no-log">No activity yet.</div></div>
+      <div class="rfhint"><span class="pring"></span><span>Live · updates every 3 s</span></div>
+    </div>
+  </div>
+
+  <!-- MOM TAB -->
+  <div class="tab-panel" id="tab-mom">
+    <div class="card">
+      <div class="mlabel">Meeting subject &amp; attendees</div>
+      <div class="mmeta">
+        <input type="text" id="mom-subject" placeholder="e.g. EPC vendor review — AGPL Solar"/>
+        <input type="text" id="mom-attendees" placeholder="Attendees (names, comma-separated)"/>
+      </div>
+
+      <div class="mlabel" style="margin-top:14px;">What are you pasting?</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-summary" onclick="setMode('summary')">
+          ⚡ AI Summary <span class="mode-badge badge-fast">Max 2 min</span>
+        </button>
+        <button class="mode-btn" id="mode-transcript" onclick="setMode('transcript')">
+          📄 Full Transcript <span class="mode-badge badge-slow">Max 5 min</span>
+        </button>
+      </div>
+
+      <div class="mode-hint fast-hint" id="mode-hint">
+        Paste the <strong>AI Summary</strong> from Teams Maestro — short, clean English. Fastest result.
+      </div>
+
+      <div class="mlabel">Paste content below</div>
+      <textarea id="mom-input" rows="8" placeholder="Paste the AI Summary from Teams Maestro here…"></textarea>
+
+      <button class="btn-gen" id="btn-gen" onclick="generateMOM()">⚡ Generate MOM in Advait Format</button>
+      <div class="timer-bar" id="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+      <div class="status-bar" id="status-bar"></div>
+    </div>
+
+    <div class="mom-out" id="mom-out">
+      <div class="mom-out-title">Minutes of Meeting — Advait Group</div>
+      <table class="mhdr-tbl" id="mhdr-tbl"></table>
+      <div class="msect">Points Discussed as below,</div>
+      <table class="mtbl">
+        <thead><tr>
+          <th style="width:5%">Sr No.</th>
+          <th style="width:22%">Discussion Points / Agenda Point</th>
+          <th style="width:22%">Action Points</th>
+          <th style="width:18%">Responsible Person</th>
+          <th style="width:14%">Target Date agreed for</th>
+          <th style="width:19%">Next Update?</th>
+        </tr></thead>
+        <tbody id="mom-rows"></tbody>
+      </table>
+      <div class="mnext" id="mnext"></div>
+      <div class="btn-row">
+        <button class="btn-dl" id="btn-dl" onclick="downloadMOM()">⬇ Download MOM (.docx)</button>
+        <button class="btn-cp" onclick="copyMOM()">📋 Copy as text</button>
+      </div>
+      <div class="priv">🔒 Generated fresh on your device only — no previous downloads stored or visible to others.</div>
+    </div>
+  </div>
+
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const RK='ainotes-lock-v6', LK='ainotes-log-v6';
+let state=null, currentMOM=null, currentMode='summary';
+
+/* ── UTILS ── */
+function now(){return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});}
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(i===0&&t==='board')||(i===1&&t==='mom')));
+  document.getElementById('tab-board').classList.toggle('active',t==='board');
+  document.getElementById('tab-mom').classList.toggle('active',t==='mom');
+}
+function toggleAbout(){document.getElementById('about-panel').classList.toggle('show');}
+function showToast(msg,type,dur){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(type||'');
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),dur||3000);
+}
+function setStatus(html){document.getElementById('status-bar').innerHTML=html;}
+
+/* ── DURATION ── */
+function parseDurationMs(str){
+  if(!str||str==='Until released') return null;
+  str=str.trim().toLowerCase();
+  const mHr=str.match(/(\d+\.?\d*)\s*h/), mMin=str.match(/(\d+\.?\d*)\s*m/);
+  let ms=0;
+  if(mHr) ms+=parseFloat(mHr[1])*3600000;
+  if(mMin) ms+=parseFloat(mMin[1])*60000;
+  return ms>0?ms:null;
+}
+function fmtRemaining(ms){
+  if(ms<=0) return '0s';
+  const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000), s=Math.floor((ms%60000)/1000);
+  if(h>0) return h+'h '+(m>0?m+'m':'');
+  if(m>0) return m+'m '+(s>0?s+'s':'');
+  return s+'s';
+}
+
+/* ── TICKER ── */
+function updateTicker(){
+  const el=document.getElementById('ticker-text'), bar=document.getElementById('ticker-bar');
+  if(!el) return;
+  if(!state){
+    bar.classList.remove('occupied');
+    el.innerHTML='<span class="tdot tdot-free"></span>AI Meeting Notes account is currently free — available for use &nbsp;·&nbsp; Select your department and claim it when your meeting starts';
+    el.className='ticker-text';
+  } else {
+    bar.classList.add('occupied');
+    const mtg=state.meeting?' — '+state.meeting:'', dur=state.duration?' · '+state.duration:'';
+    const msg='⚠ NOT AVAILABLE &nbsp;·&nbsp; '+state.dept+mtg+' is currently using AI Meeting Notes'+dur+' &nbsp;·&nbsp; Please wait until released &nbsp;·&nbsp; ⚠ NOT AVAILABLE &nbsp;·&nbsp; '+state.dept+mtg+' is using this account';
+    el.innerHTML='<span class="tdot tdot-busy"></span>'+msg;
+    el.className='ticker-text fast';
+  }
+}
+
+/* ── AUTO-EXPIRY ── */
+setInterval(async()=>{
+  if(!state||!state.claimExpiry) return;
+  if(Date.now()>=state.claimExpiry){
+    const dept=state.dept, prev=state.meeting;
+    state=null; updateTicker(); renderStatus();
+    try{await window.storage.delete(RK,true); await addLog(dept,'Auto-released (expired)',null,prev);}catch{}
+    loadLog();
+  }
+  if(state&&state.claimExpiry){
+    const rem=state.claimExpiry-Date.now();
+    if(rem>0){
+      const info=document.getElementById('info-text');
+      const mtg=state.meeting?' · '+state.meeting:'', dur=state.duration?' · '+state.duration:'';
+      info.textContent='In use by '+state.dept+mtg+' · Since '+state.since+dur+' · '+fmtRemaining(rem)+' left';
+    }
+  }
+},1000);
+
+/* ── STORAGE ── */
+async function loadState(){
+  let fresh=null;
+  try{const r=await window.storage.get(RK,true); fresh=r?JSON.parse(r.value):null;}catch{fresh=null;}
+  if(fresh&&fresh.claimExpiry&&Date.now()>=fresh.claimExpiry){
+    try{await window.storage.delete(RK,true); await addLog(fresh.dept,'Auto-released (expired)',null,fresh.meeting);}catch{}
+    fresh=null;
+  }
+  if(JSON.stringify(state)!==JSON.stringify(fresh)){state=fresh; updateTicker(); renderStatus(); loadLog();}
+}
+
+async function loadLog(){
+  try{
+    const r=await window.storage.get(LK,true);
+    const logs=r?JSON.parse(r.value):[];
+    const el=document.getElementById('log-list');
+    if(!logs.length){el.innerHTML='<div class="no-log">No activity yet.</div>';return;}
+    el.innerHTML=logs.slice(-12).reverse().map(l=>{
+      const ac=l.action==='Claimed'?'lc':'lr';
+      const meta=l.action==='Claimed'&&l.duration?' · '+l.duration:'';
+      const mtg=l.meeting?'<span class="lm">'+l.meeting+'</span>':'';
+      return '<div class="log-item"><span class="ld">'+l.dept+'</span>'+mtg+'<span class="'+ac+'">'+l.action+meta+'</span><span class="lt">'+l.time+'</span></div>';
+    }).join('');
+  }catch{}
+}
+
+async function addLog(dept,action,duration,meeting){
+  try{
+    const r=await window.storage.get(LK,true);
+    const logs=r?JSON.parse(r.value):[];
+    logs.push({dept,action,duration:duration||null,meeting:meeting||null,time:now()});
+    if(logs.length>60) logs.splice(0,logs.length-60);
+    await window.storage.set(LK,JSON.stringify(logs),true);
+  }catch{}
+}
+
+/* ── STATUS ── */
+function renderStatus(){
+  const badge=document.getElementById('badge'), dot=document.getElementById('dot'),
+        info=document.getElementById('info-text'), btn=document.getElementById('action-btn'),
+        dept=document.getElementById('dept').value;
+  if(!state){
+    badge.className='sbadge badge-free'; badge.textContent='Available';
+    dot.className='idot dot-free'; info.textContent='Account is free — no department is using it right now.';
+    if(dept){btn.className='btn btn-claim'; btn.textContent='Claim for my dept';}
+    else{btn.className='btn btn-disabled'; btn.textContent='Select dept first';}
+  } else {
+    badge.className='sbadge badge-busy'; badge.textContent='Not Available';
+    dot.className='idot dot-busy';
+    const dur=state.duration?' · '+state.duration:'', mtg=state.meeting?' · '+state.meeting:'';
+    const rem=state.claimExpiry?' · '+fmtRemaining(state.claimExpiry-Date.now())+' left':'';
+    info.textContent='In use by '+state.dept+mtg+' · Since '+state.since+dur+rem;
+    if(dept===state.dept){btn.className='btn btn-release'; btn.textContent="Release — I'm done";}
+    else if(dept){btn.className='btn btn-disabled'; btn.textContent='Occupied — wait';}
+    else{btn.className='btn btn-disabled'; btn.textContent='Select dept first';}
+  }
+}
+
+/* ── CLAIM/RELEASE ── */
+function onDeptChange(){document.getElementById('iconfirm').classList.remove('show'); renderStatus();}
+function handleAction(){
+  const dept=document.getElementById('dept').value; if(!dept) return;
+  if(!state){
+    document.getElementById('iconfirm').classList.add('show');
+    document.getElementById('action-btn').className='btn btn-disabled';
+    document.getElementById('action-btn').textContent='Select duration ↓';
+  } else if(state.dept===dept){releaseClaim();}
+}
+function onDurSelect(){
+  const sel=document.getElementById('duration'), cust=document.getElementById('custom-duration');
+  if(sel.value==='custom') cust.focus(); else cust.value='';
+}
+function onCustomDur(){
+  if(document.getElementById('custom-duration').value.trim()) document.getElementById('duration').value='custom';
+}
+function getSelectedDuration(){
+  const cust=document.getElementById('custom-duration').value.trim();
+  if(cust) return cust;
+  const v=document.getElementById('duration').value;
+  return v==='custom'?'Custom':v;
+}
+function cancelClaim(){document.getElementById('iconfirm').classList.remove('show'); renderStatus();}
+async function confirmClaim(){
+  const dept=document.getElementById('dept').value,
+        duration=getSelectedDuration(),
+        meeting=document.getElementById('meeting-name').value.trim();
+  const durMs=parseDurationMs(duration);
+  const claimExpiry=durMs?Date.now()+durMs:null;
+  const s={dept,since:now(),duration,meeting,claimTime:Date.now(),claimExpiry};
+  state=s; updateTicker(); renderStatus();
+  document.getElementById('iconfirm').classList.remove('show');
+  try{await window.storage.set(RK,JSON.stringify(s),true); await addLog(dept,'Claimed',duration,meeting);}catch{}
+  loadLog();
+}
+async function releaseClaim(){
+  const dept=document.getElementById('dept').value, prev=state?state.meeting:null;
+  state=null; updateTicker(); renderStatus();
+  try{await window.storage.delete(RK,true); await addLog(dept,'Released',null,prev);}catch{}
+  loadLog();
+}
+
+/* ── MODE TOGGLE ── */
+function setMode(m){
+  currentMode=m;
+  document.getElementById('mode-summary').classList.toggle('active',m==='summary');
+  document.getElementById('mode-transcript').classList.toggle('active',m==='transcript');
+  const hint=document.getElementById('mode-hint');
+  const ta=document.getElementById('mom-input');
+  if(m==='summary'){
+    hint.className='mode-hint fast-hint';
+    hint.innerHTML='Paste the <strong>AI Summary</strong> from Teams Maestro. AI will analyse and generate a detailed MOM — max 2 minutes.';
+    ta.placeholder='Paste the AI Summary from Teams Maestro here…';
+  } else {
+    hint.className='mode-hint slow-hint';
+    hint.innerHTML='Paste the <strong>Full Transcript</strong> from Teams Maestro. AI will compress and analyse it to generate a detailed MOM — max 5 minutes.';
+    ta.placeholder='Paste the full transcript from Teams Maestro here…';
+  }
+}
+
+/* ── TIMER BAR ── */
+let timerInterval=null;
+function startTimer(totalMs){
+  const bar=document.getElementById('timer-bar'), fill=document.getElementById('timer-fill');
+  bar.classList.add('show'); fill.style.width='0%';
+  const start=Date.now();
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    const pct=Math.min(95,(Date.now()-start)/totalMs*100);
+    fill.style.width=pct+'%';
+  },300);
+}
+function stopTimer(){
+  clearInterval(timerInterval);
+  const fill=document.getElementById('timer-fill');
+  fill.style.width='100%';
+  setTimeout(()=>{document.getElementById('timer-bar').classList.remove('show'); fill.style.width='0%';},700);
+}
+
+/* ── SUMMARY PARSER (pure JS, zero API, instant) ── */
+function parseSummaryDirect(text, subject, attendees){
+  // Normalise line endings and split
+  const rawLines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  const lines = rawLines.map(l=>l.trim()).filter(l=>l.length>0);
+
+  // Strip any leading bullet/list character and clean the line
+  const clean = l => l.replace(/^[\*\-–—•·◦▪▸►\u2022\u25CF\u25AA\u2013\u2014]\s*/,'').replace(/^\d+[\.\)]\s*/,'').trim();
+  // A line is "content" (not a section header) if it's longer than a few words or starts with a bullet
+  const isBullet = l => /^[\*\-–—•·◦▪▸►\u2022\u25CF\u25AA]/.test(l) || /^\d+[\.\)]/.test(l);
+  // A line is a section header if it's short, title-case/caps, no sentence punctuation
+  const isHeader = l => l.length < 60 && !l.includes('.') && /^[A-Z]/.test(l) && l===l.trim();
+
+  // Known section header patterns
+  const HEADERS = /^(purpose|key points?|detailed overview|action items?|compliance management|issues management|implementation process|user experience|introduction|summary|overview|discussion|agenda|decisions?|next steps?)$/i;
+
+  // Find section indices
+  let purposeIdx=-1, keyIdx=-1, actionIdx=-1;
+  lines.forEach((l,i)=>{
+    const lc=l.toLowerCase().trim();
+    if(/^purpose$/i.test(lc)) purposeIdx=i;
+    else if(/^key points?$/i.test(lc)) keyIdx=i;
+    else if(/^action items?$/i.test(lc)) actionIdx=i;
+  });
+
+  // Collect lines in a section until the next known header
+  function sectionLines(startIdx){
+    const result=[];
+    for(let i=startIdx+1;i<lines.length;i++){
+      const l=lines[i];
+      if(HEADERS.test(l.trim())) break;
+      if(l.length>0) result.push(l);
+    }
+    return result;
+  }
+
+  // Subject
+  let detectedSubject=subject||'';
+  if(!detectedSubject){
+    if(purposeIdx>=0){
+      const sl=sectionLines(purposeIdx);
+      if(sl.length) detectedSubject=clean(sl[0]);
+    }
+    if(!detectedSubject) detectedSubject=clean(lines[0])||'Meeting';
+  }
+
+  // Key Points — take ALL content lines in section (bullet or not)
+  let keyPoints=[];
+  if(keyIdx>=0){
+    keyPoints=sectionLines(keyIdx).map(clean).filter(l=>l.length>5);
+  }
+
+  // Action Items — every content line, split on last colon for responsible
+  const actions=[];
+  if(actionIdx>=0){
+    sectionLines(actionIdx).forEach(l=>{
+      const raw=clean(l);
+      if(raw.length<5) return;
+      // Last colon separates action from responsible person
+      const lastColon=raw.lastIndexOf(':');
+      if(lastColon>10&&lastColon<raw.length-1){
+        const actionText=raw.slice(0,lastColon).replace(/\.+$/,'').trim();
+        const responsible=raw.slice(lastColon+1).trim();
+        if(/[A-Za-z]/.test(responsible)) actions.push({actionText,responsible});
+        else actions.push({actionText:raw,responsible:attendees?attendees.split(',')[0].trim():'TBD'});
+      } else {
+        actions.push({actionText:raw,responsible:attendees?attendees.split(',')[0].trim():'TBD'});
+      }
+    });
+  }
+
+  // Attendees from action responsible names
+  let detectedAttendees=attendees||'';
+  if(!detectedAttendees&&actions.length){
+    const names=[...new Set(actions.map(a=>a.responsible).filter(n=>n&&n.length>1&&n!=='TBD'))];
+    if(names.length) detectedAttendees=names.join(', ');
+  }
+  if(!detectedAttendees) detectedAttendees='As per meeting invite';
+
+  // Fallback: if no key points found, collect ALL bullet/content lines from entire text (deduped)
+  let source;
+  if(keyPoints.length>0){
+    source=[...new Set(keyPoints)];
+  } else {
+    // Try every bullet line in the document
+    const allBullets=lines.filter(isBullet).map(clean).filter(l=>l.length>8);
+    if(allBullets.length>0){
+      source=[...new Set(allBullets)].slice(0,20);
+    } else {
+      // Last resort: take any line longer than 20 chars that isn't a header
+      source=[...new Set(lines.filter(l=>l.length>20&&!HEADERS.test(l)).map(clean))].slice(0,15);
+    }
+  }
+
+  // Pair key points (discussion) with action items by position
+  // discussion = key point, action = action item text, responsible = person from that action item
+  const rows=[];
+  let sr=1;
+
+  const maxRows=Math.max(source.length, actions.length);
+  for(let i=0;i<maxRows;i++){
+    const point  = source[i]  ? source[i].charAt(0).toUpperCase()+source[i].slice(1)  : (actions[i]?actions[i].actionText:'');
+    const action = actions[i] ? actions[i].actionText : 'To be confirmed';
+    const resp   = actions[i] ? actions[i].responsible : (detectedAttendees.split(',')[i]?.trim() || detectedAttendees.split(',')[0]?.trim() || 'TBD');
+    if(!point) continue;
+    rows.push({sr:sr++, discussion:point, action:action, responsible:resp, targetDate:'TBD', nextUpdate:'To be discussed'});
+  }
+
+  return {subject:detectedSubject,attendees:detectedAttendees,concern:detectedSubject,rows:rows.slice(0,25),nextReview:'To be scheduled'};
+}
+
+/* ── TRANSCRIPT COMPRESSOR (JS, no API) ── */
+function compressTranscript(text){
+  const TARGET = 1200; // chars — tight enough to keep Step 2 fast
+  if(text.length <= TARGET) return text;
+
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+
+  // Score each line by likely usefulness
+  function score(l){
+    const lc=l.toLowerCase();
+    let s=0;
+    // High value signals
+    if(/action|decide|agreed|will|shall|must|follow.?up|next step|deadline|target|responsible|assign|complete|task|deliver|review|submit|share|send|prepare|coordinate|implement|schedule|plan|approval|discuss/i.test(l)) s+=4;
+    if(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(l)) s+=3; // contains date
+    if(/[A-Z][a-z]+ [A-Z][a-z]+/.test(l)) s+=2; // contains person name
+    if(l.endsWith('?')) s+=1; // question = discussion point
+    if(l.length>30&&l.length<200) s+=1; // good length
+    // Low value / noise
+    if(/^(hi|hello|okay|ok|yeah|yes|no|hmm|uh|um|right|sure|good|thank|thanks|bye|see you)/i.test(l)) s-=3;
+    if(/^[a-z]{1,3}\s/.test(l)) s-=2; // starts with garbled short word
+    if(l.length<15) s-=2; // too short
+    if(/[^\x00-\x7F]{3,}/.test(l)) s-=1; // mostly non-ASCII (Hindi/Gujarati noise)
+    return s;
+  }
+
+  // Score and sort, keeping top lines
+  const scored = lines.map((l,i)=>({l,s:score(l),i}));
+  scored.sort((a,b)=>b.s-a.s);
+
+  // Keep top-scored lines up to TARGET chars, preserving original order
+  const kept = new Set();
+  let total = 0;
+  for(const {l,s,i} of scored){
+    if(s < -1) continue; // skip definite noise
+    if(total + l.length > TARGET) break;
+    kept.add(i);
+    total += l.length + 1;
+  }
+
+  // Reconstruct in original order
+  const result = lines.filter((_,i)=>kept.has(i)).join('\n');
+  return result.length > 0 ? result : text.slice(0, TARGET);
+}
+
+/* ── GENERATE MOM ── */
+async function generateMOM(){
+  const input=document.getElementById('mom-input').value.trim();
+  const subject=document.getElementById('mom-subject').value.trim();
+  const attendees=document.getElementById('mom-attendees').value.trim();
+  if(!input){setStatus('<div class="err-box">Please paste content first.</div>');return;}
+
+  const isSummary=currentMode==='summary';
+  const btn=document.getElementById('btn-gen');
+  btn.disabled=true;
+  document.getElementById('mom-out').classList.remove('show');
+
+  if(isSummary){
+    // SUMMARY — max 2 min
+    await runPipeline(input,'summary',subject,attendees,btn,120000);
+    return;
+  }
+  // TRANSCRIPT — max 5 min
+  await runPipeline(input,'transcript',subject,attendees,btn,300000);
+}
+
+async function runPipeline(input,mode,subject,attendees,btn,maxMs){
+  setStatus('<div class="sbar-loading"><div class="spinner"></div><span id="sbar-msg">Step 1/2 — Compressing content…</span></div>');
+  startTimer(maxMs);
+  let timedOut=false;
+  const tm=setTimeout(()=>{timedOut=true;},maxMs);
+
+  try{
+    // ── STEP 1: JS Compress — unlimited input, no char cap ──
+    const compressed=compressTranscript(input);
+    if(timedOut){stopTimer();setStatus('<div class="err-box">Timed out. Please try again.</div>');btn.disabled=false;return;}
+
+    // ── STEP 2: Skip — feed compressed directly into MOM ──
+    const summary = compressed;
+    document.getElementById('sbar-msg').textContent='Step 1/2 — Compressing…';
+    if(timedOut){stopTimer();setStatus('<div class="err-box">Timed out. Please try again.</div>');btn.disabled=false;return;}
+
+    // ── STEP 3: AI Generate MOM from summary (streaming) ──
+    document.getElementById('sbar-msg').textContent='Step 2/2 — AI generating MOM…';
+    const momPrompt='Professional MOM writer for Advait Group. Convert summary to MOM. Raw JSON only, no markdown.\n{"subject":"","attendees":"'+(attendees||'infer')+'","concern":"one line purpose","rows":[{"sr":1,"discussion":"full discussion point — complete sentence","action":"specific action — must differ from discussion","responsible":"exact name or role","targetDate":"DD/MM/YYYY or TBD","nextUpdate":"when/how"}],"nextReview":"date or To be scheduled"}\nMin 5 rows. Extract every point. Subject:'+(subject||'infer')+'\nSUMMARY:\n'+summary;
+
+    const momRes=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,stream:true,messages:[{role:'user',content:momPrompt}]})
+    });
+    if(!momRes.ok){const t=await momRes.text();clearTimeout(tm);stopTimer();setStatus('<div class="err-box">Step 2 error ('+momRes.status+'): '+t.slice(0,200)+'</div>');btn.disabled=false;return;}
+
+    const reader=momRes.body.getReader(),decoder=new TextDecoder();
+    let raw='',dots=0;
+    const dt=setInterval(()=>{dots=(dots+1)%4;const e=document.getElementById('sbar-msg');if(e)e.textContent='Step 2/2 — Generating MOM'+'.'.repeat(dots);},600);
+    while(true){
+      if(timedOut){clearInterval(dt);clearTimeout(tm);stopTimer();setStatus('<div class="err-box">Timed out after '+(maxMs/60000)+' minutes. Try a shorter input.</div>');btn.disabled=false;return;}
+      const{done,value}=await reader.read(); if(done)break;
+      for(const line of decoder.decode(value,{stream:true}).split('\n')){
+        if(!line.startsWith('data:'))continue;
+        const d=line.slice(5).trim(); if(d==='[DONE]')break;
+        try{const ev=JSON.parse(d);if(ev.type==='content_block_delta'&&ev.delta?.text)raw+=ev.delta.text;}catch{}
+      }
+    }
+    clearInterval(dt); clearTimeout(tm); stopTimer();
+    const cleaned=raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    let mom;
+    try{mom=JSON.parse(cleaned);}
+    catch(pe){setStatus('<div class="err-box">Parse error: '+cleaned.slice(0,200)+'</div>');btn.disabled=false;return;}
+    currentMOM=mom; renderMOM(mom);
+    setStatus('<div class="sbar-ok">✓ MOM generated — ready to download</div>');
+    showToast('✓ MOM generated','green',2500);
+  }catch(e){clearTimeout(tm);stopTimer();setStatus('<div class="err-box">Error: '+e.message+'</div>');}
+  btn.disabled=false;
+}
+
+/* ── RENDER MOM ── */
+function renderMOM(mom){
+  const dateStr=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'});
+  document.getElementById('mhdr-tbl').innerHTML=
+    '<tr><td>Name of Attendees</td><td>'+(mom.attendees||'—')+'</td></tr>'+
+    '<tr><td>Subject of Meeting</td><td>'+(mom.subject||'—')+'</td></tr>'+
+    '<tr><td>Date of Meeting</td><td>'+dateStr+'</td></tr>'+
+    '<tr><td>Concern</td><td>'+(mom.concern||'—')+'</td></tr>';
+  document.getElementById('mom-rows').innerHTML=(mom.rows||[]).map(r=>
+    '<tr><td style="text-align:center;font-weight:500">'+r.sr+'</td><td>'+(r.discussion||'')+'</td><td>'+(r.action||'')+'</td><td>'+(r.responsible||'')+'</td><td>'+(r.targetDate||'')+'</td><td>'+(r.nextUpdate||'')+'</td></tr>'
+  ).join('');
+  document.getElementById('mnext').innerHTML='<strong>Next Review Meeting: </strong>'+(mom.nextReview||'To be scheduled');
+  document.getElementById('mom-out').classList.add('show');
+}
+
+/* ── DOWNLOAD MOM ── */
+function downloadMOM(){
+  if(!currentMOM){showToast('Generate a MOM first','red',2500);return;}
+  const btn=document.getElementById('btn-dl');
+  btn.disabled=true; btn.textContent='Building file…';
+
+  function doDownload(){
+    try{
+      const D=window.docx;
+      if(!D) throw new Error('docx not loaded');
+      const{Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,BorderStyle,ShadingType,AlignmentType,VerticalAlign}=D;
+      const m=currentMOM;
+      const bLight={style:BorderStyle.SINGLE,size:1,color:'BDD0EE'}, brdL={top:bLight,bottom:bLight,left:bLight,right:bLight};
+      const bDark={style:BorderStyle.SINGLE,size:1,color:'1A4084'},  brdD={top:bDark,bottom:bDark,left:bDark,right:bDark};
+      const cm=v=>({size:v,type:WidthType.DXA}), mg={top:80,bottom:80,left:120,right:120};
+      const cell=(t,isH,w)=>new TableCell({borders:isH?brdD:brdL,width:cm(w),shading:{fill:isH?'1A4084':'FFFFFF',type:ShadingType.CLEAR},margins:mg,verticalAlign:VerticalAlign.CENTER,
+        children:[new Paragraph({children:[new TextRun({text:String(t||''),bold:isH,color:isH?'FFFFFF':'1C1C1C',size:20,font:'Calibri'})]})]});
+      const hRow=(k,v)=>new TableRow({children:[
+        new TableCell({borders:brdL,width:cm(3600),shading:{fill:'EBF2FF',type:ShadingType.CLEAR},margins:mg,children:[new Paragraph({children:[new TextRun({text:k,bold:true,color:'1A4084',size:20,font:'Calibri'})]})]})
+       ,new TableCell({borders:brdL,width:cm(6146),shading:{fill:'FFFFFF',type:ShadingType.CLEAR},margins:mg,children:[new Paragraph({children:[new TextRun({text:v||'—',size:20,font:'Calibri'})]})]})]});
+      const dateStr=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1080,right:1080,bottom:1080,left:1080}}},children:[
+        new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:160},children:[new TextRun({text:'MINUTES OF MEETING',bold:true,size:28,color:'1A4084',font:'Calibri'})]}),
+        new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:360},children:[new TextRun({text:'Advait Group (AETL & AGPL)',size:22,color:'3A66AA',font:'Calibri'})]}),
+        new Table({width:cm(9746),columnWidths:[3600,6146],rows:[hRow('Name of Attendees',m.attendees),hRow('Subject of Meeting',m.subject),hRow('Date of Meeting',dateStr),hRow('Concern',m.concern)]}),
+        new Paragraph({spacing:{before:280,after:120},children:[new TextRun({text:'Points Discussed as below,',bold:true,underline:{},color:'1A4084',size:22,font:'Calibri'})]}),
+        new Table({width:cm(9746),columnWidths:[480,1900,1900,1600,1280,1586],rows:[
+          new TableRow({tableHeader:true,children:[cell('Sr No.',true,480),cell('Discussion Points / Agenda Point',true,1900),cell('Action Points',true,1900),cell('Responsible Person',true,1600),cell('Target Date agreed for',true,1280),cell('Next Update?',true,1586)]}),
+          ...(m.rows||[]).map(r=>new TableRow({children:[cell(r.sr,false,480),cell(r.discussion,false,1900),cell(r.action,false,1900),cell(r.responsible,false,1600),cell(r.targetDate,false,1280),cell(r.nextUpdate,false,1586)]}))
+        ]}),
+        new Paragraph({spacing:{before:280},children:[new TextRun({text:'Next Review Meeting: ',bold:true,size:20,font:'Calibri'}),new TextRun({text:m.nextReview||'To be scheduled',size:20,font:'Calibri'})]}),
+      ]}]});
+      Packer.toBlob(doc).then(blob=>{
+        const url=URL.createObjectURL(blob), a=document.createElement('a');
+        a.href=url;
+        a.download='MOM_'+(m.subject||'Meeting').replace(/[^a-zA-Z0-9]/g,'_').slice(0,28)+'_'+new Date().toLocaleDateString('en-GB').replace(/\//g,'')+'.docx';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        btn.disabled=false; btn.textContent='⬇ Download MOM (.docx)';
+        showToast('✓ MOM downloaded successfully','green',3500);
+      }).catch(()=>{ btn.disabled=false; btn.textContent='⬇ Download MOM (.docx)'; fallbackTxt(); });
+    }catch(e){ btn.disabled=false; btn.textContent='⬇ Download MOM (.docx)'; fallbackTxt(); }
+  }
+
+  function fallbackTxt(){
+    const m=currentMOM;
+    const dateStr=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'});
+    let t='MINUTES OF MEETING — ADVAIT GROUP (AETL & AGPL)\n================================================\n\n';
+    t+='Name of Attendees : '+(m.attendees||'—')+'\nSubject of Meeting : '+(m.subject||'—')+'\nDate of Meeting    : '+dateStr+'\nConcern            : '+(m.concern||'—')+'\n\nPOINTS DISCUSSED:\n-----------------\n';
+    (m.rows||[]).forEach(r=>{
+      t+='\n'+r.sr+'. Discussion  : '+r.discussion+'\n   Action      : '+r.action+'\n   Responsible : '+r.responsible+'\n   Target Date : '+r.targetDate+'\n   Next Update : '+r.nextUpdate+'\n';
+    });
+    t+='\n================================================\nNext Review Meeting: '+(m.nextReview||'To be scheduled');
+    const blob=new Blob([t],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download='MOM_'+(m.subject||'Meeting').replace(/[^a-zA-Z0-9]/g,'_').slice(0,25)+'.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    btn.disabled=false; btn.textContent='⬇ Download MOM (.docx)';
+    showToast('✓ Downloaded as .txt (docx unavailable)','green',3500);
+  }
+
+  // docx loaded in <head> — should be immediately available
+  if(window.docx){ doDownload(); }
+  else{ setTimeout(()=>{ if(window.docx) doDownload(); else fallbackTxt(); }, 1000); }
+}
+
+/* ── COPY MOM ── */
+function copyMOM(){
+  if(!currentMOM){showToast('Generate a MOM first','red',2500);return;}
+  const m=currentMOM;
+  const dateStr=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'});
+  let t='MINUTES OF MEETING — ADVAIT GROUP (AETL & AGPL)\n================================================\n\n';
+  t+='Name of Attendees : '+(m.attendees||'—')+'\nSubject of Meeting : '+(m.subject||'—')+'\nDate of Meeting    : '+dateStr+'\nConcern            : '+(m.concern||'—')+'\n\nPOINTS DISCUSSED:\n-----------------\n';
+  (m.rows||[]).forEach(r=>{
+    t+='\n'+r.sr+'. Discussion  : '+r.discussion+'\n   Action      : '+r.action+'\n   Responsible : '+r.responsible+'\n   Target Date : '+r.targetDate+'\n   Next Update : '+r.nextUpdate+'\n';
+  });
+  t+='\n================================================\nNext Review Meeting: '+(m.nextReview||'To be scheduled');
+  const btn=document.querySelector('.btn-cp');
+  function done(){btn.textContent='✓ Copied!'; showToast('✓ Copied to clipboard','green',2500); setTimeout(()=>{btn.textContent='📋 Copy as text';},2500);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done).catch(()=>fbCopy(t,done));
+  } else { fbCopy(t,done); }
+}
+function fbCopy(t,cb){
+  const ta=document.createElement('textarea');
+  ta.value=t; ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{document.execCommand('copy'); cb();}catch{
